@@ -46,16 +46,21 @@ class NavigationActivity : AppCompatBaseActivity() {
         setContentView(binding.root)
         supportActionBar?.hide()
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.inclToolBar.clSubDiv) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(0, systemBars.top, 0, 0)
-            insets
+        binding.inclToolBar.clSubDiv.let { subDiv ->
+            ViewCompat.setOnApplyWindowInsetsListener(subDiv) { v, insets ->
+                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                v.setPadding(0, systemBars.top, 0, 0)
+                insets
+            }
         }
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom)
-            insets
+        // Check if main exists before setting listener
+        binding.main.let { mainView ->
+            ViewCompat.setOnApplyWindowInsetsListener(mainView) { v, insets ->
+                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom)
+                insets
+            }
         }
 
 

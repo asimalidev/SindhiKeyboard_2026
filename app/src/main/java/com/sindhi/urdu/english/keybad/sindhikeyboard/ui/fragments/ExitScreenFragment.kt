@@ -43,11 +43,15 @@ class ExitScreenFragment : Fragment() {
     lateinit var binding: FragmentExitScreenBinding
     var navController: NavController? = null
     var ivClose: ImageView? = null
-    var isPurchased: Boolean? = null
+    var isPurchase = false
     var doubleBackToExitPressedOnce = false
-    private var isPurchase = false
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         binding = FragmentExitScreenBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -56,19 +60,26 @@ class ExitScreenFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         isNavControllerAdded()
 
-        isPurchase = requireContext().getSharedPreferences(REMOTE_CONFIG, MODE_PRIVATE)?.getBoolean(IS_PURCHASED, false) == true
+        isPurchase = requireContext().getSharedPreferences(REMOTE_CONFIG, MODE_PRIVATE)
+            ?.getBoolean(IS_PURCHASED, false) == true
         val composeView = view.findViewById<ComposeView>(R.id.composeView)
         composeView.setContent {
             ExitScreenThemes(onApplyThemeClick = { theme ->
                 selectedTheme = theme
                 if (navController != null) {
-                    InterstitialClassAdMob.checkAndLoadAdMobInterstitial(requireActivity(),"AfterExitLoad")
+                    InterstitialClassAdMob.checkAndLoadAdMobInterstitial(
+                        requireActivity(),
+                        "AfterExitLoad"
+                    )
                     selectedTheme = theme
                     if (ivClose != null) {
                         ivClose?.visibility = View.INVISIBLE
                     }
                     try {
-                        val action = ExitScreenFragmentDirections.actionExitScreenFragmentToThemesApplyFragment("ExitScreenFragment")
+                        val action =
+                            ExitScreenFragmentDirections.actionExitScreenFragmentToThemesApplyFragment(
+                                "ExitScreenFragment"
+                            )
                         navController?.navigate(action)
                     } catch (ex: Exception) {
                         ex.printStackTrace()
@@ -79,39 +90,46 @@ class ExitScreenFragment : Fragment() {
             })
         }
 
-        CoroutineScope(Dispatchers.IO).launch { CustomFirebaseEvents.activitiesFragmentEvent(requireActivity(),"ExitScreenFragment") }
+        CoroutineScope(Dispatchers.IO).launch {
+            CustomFirebaseEvents.activitiesFragmentEvent(
+                requireActivity(),
+                "ExitScreenFragment"
+            )
+        }
 
-        if (isPurchased!!) {
+        if (isPurchase==true) {
             binding.nativeAdContainerAd.visibility = View.GONE
         } else {
             if (NetworkCheck.isNetworkAvailable(requireContext())
-                && requireActivity().getSharedPreferences("RemoteConfig", Context.MODE_PRIVATE).getString(
-                    Preferences.ADS_NATIVE_EXIT,"ON").equals("ON",true)) {
+                && requireActivity().getSharedPreferences("RemoteConfig", Context.MODE_PRIVATE)
+                    .getString(
+                        Preferences.ADS_NATIVE_EXIT, "ON"
+                    ).equals("ON", true)
+            ) {
                 binding.g1ExitScreen.setGuidelinePercent(0.55f)
-                val pref =requireActivity().getSharedPreferences("RemoteConfig", MODE_PRIVATE)
-                val adId  =if (!BuildConfig.DEBUG){
-                    pref.getString(NATIVE_OVER_ALL,"ca-app-pub-3747520410546258/1702944653")
-                }
-                else{
+                val pref = requireActivity().getSharedPreferences("RemoteConfig", MODE_PRIVATE)
+                val adId = if (!BuildConfig.DEBUG) {
+                    pref.getString(NATIVE_OVER_ALL, "ca-app-pub-3747520410546258/1702944653")
+                } else {
                     resources.getString(R.string.ADMOB_NATIVE_LANGUAGE_2)
                 }
-                    NewNativeAdClass.checkAdRequestAdmob(
-                        mContext = requireActivity(),
-                        adId = adId!!,//getString(R.string.admob_native),
-                        fragmentName = "OverallAtPoetryExit",
-                        isMedia = true,
-                        isMediaOnLeft = true,
-                        adContainer = binding.nativeAdContainerAd,
-                        isMediumAd = true,
-                        onFailed = {
-                            binding.nativeAdContainerAd.visibility = View.GONE
-                            binding.shimmerLayout.stopShimmer()
-                            binding.shimmerLayout.visibility = View.GONE
-                        },
-                        onAddLoaded = {
-                            binding.shimmerLayout.stopShimmer()
-                            binding.shimmerLayout.visibility = View.GONE
-                        })
+                NewNativeAdClass.checkAdRequestAdmob(
+                    mContext = requireActivity(),
+                    adId = adId!!,//getString(R.string.admob_native),
+                    fragmentName = "OverallAtPoetryExit",
+                    isMedia = true,
+                    isMediaOnLeft = true,
+                    adContainer = binding.nativeAdContainerAd,
+                    isMediumAd = true,
+                    onFailed = {
+                        binding.nativeAdContainerAd.visibility = View.GONE
+                        binding.shimmerLayout.stopShimmer()
+                        binding.shimmerLayout.visibility = View.GONE
+                    },
+                    onAddLoaded = {
+                        binding.shimmerLayout.stopShimmer()
+                        binding.shimmerLayout.visibility = View.GONE
+                    })
             } else {
                 binding.shimmerLayout.stopShimmer()
                 binding.shimmerLayout.visibility = View.GONE
@@ -126,7 +144,7 @@ class ExitScreenFragment : Fragment() {
         }
 
         binding.btnExploreMore.blockingClickListener {
-            InterstitialClassAdMob.checkAndLoadAdMobInterstitial(requireActivity(),"AfterExitLoad")
+            InterstitialClassAdMob.checkAndLoadAdMobInterstitial(requireActivity(), "AfterExitLoad")
             if (ivClose != null) {
                 ivClose?.visibility = View.INVISIBLE
             }
@@ -140,20 +158,27 @@ class ExitScreenFragment : Fragment() {
             onThemeClicked("SeeMore")
         }
 
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (doubleBackToExitPressedOnce) {
-                    exitCode()
-                    Toast.makeText(requireContext(), "Exit Code Goes Here", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(requireContext(), "Please Click again to EXIT !", Toast.LENGTH_SHORT).show()
-                    doubleBackToExitPressedOnce = true
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        doubleBackToExitPressedOnce = false
-                    }, 2000)
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (doubleBackToExitPressedOnce) {
+                        exitCode()
+                        Toast.makeText(requireContext(), "Exit Code Goes Here", Toast.LENGTH_SHORT)
+                            .show()
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            "Please Click again to EXIT !",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        doubleBackToExitPressedOnce = true
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            doubleBackToExitPressedOnce = false
+                        }, 2000)
+                    }
                 }
-            }
-        })
+            })
     }
 
     private fun onThemeClicked(from: String) {
@@ -191,11 +216,15 @@ class ExitScreenFragment : Fragment() {
                 if (currentActivity != null && isAdded) {
                     if (navController != null) {
                         // Use currentActivity safely here
-                        InterstitialClassAdMob.checkAndLoadAdMobInterstitial(currentActivity, "AfterExitLoad")
+                        InterstitialClassAdMob.checkAndLoadAdMobInterstitial(
+                            currentActivity,
+                            "AfterExitLoad"
+                        )
 
                         // Ensure we are still on the correct destination before navigating
                         if (navController?.currentDestination?.id == R.id.exitScreen_fragment) {
-                            val action = ExitScreenFragmentDirections.actionKeypressFragmentToNavHome()
+                            val action =
+                                ExitScreenFragmentDirections.actionKeypressFragmentToNavHome()
                             navController?.navigate(action)
                         }
                     } else {
@@ -205,7 +234,8 @@ class ExitScreenFragment : Fragment() {
             }
         }
 
-        val txtSindhiKeyboard = requireActivity().findViewById<AppCompatTextView>(R.id.txtSindhiKeyboard)
+        val txtSindhiKeyboard =
+            requireActivity().findViewById<AppCompatTextView>(R.id.txtSindhiKeyboard)
         if (txtSindhiKeyboard != null) {
             txtSindhiKeyboard.text = resources.getString(R.string.label_explore_feature)
             txtSindhiKeyboard.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)

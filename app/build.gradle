@@ -23,9 +23,9 @@ android {
         applicationId "com.sindhi.urdu.english.keybad"
         minSdk 23
         targetSdk 36
-        versionCode 62
-        versionName '5.8'
-
+        versionCode 63
+        versionName '5.9'
+        multiDexEnabled true
         setProperty("archivesBaseName","SindhiKeyboard_VN" + versionName + "("+versionCode+")_" + new Date().format('dd-MM-YYYY'))
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -43,7 +43,7 @@ android {
         release {
             signingConfig = signingConfigs.getByName("release")
             manifestPlaceholders = [crashlyticsCollectionEnabled:"true"]
-            minifyEnabled true
+            minifyEnabled false
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             resValue "string", "ShowPopups", '"false"'
@@ -142,6 +142,7 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
     implementation libs.androidx.core.ktx
     implementation libs.androidx.appcompat
     implementation libs.material

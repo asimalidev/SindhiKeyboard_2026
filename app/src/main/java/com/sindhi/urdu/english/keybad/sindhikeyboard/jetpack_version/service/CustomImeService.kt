@@ -1,6 +1,5 @@
 package com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.service
 
-import android.animation.LayoutTransition
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.ClipData
@@ -13,13 +12,13 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.content.res.Resources
-import android.database.sqlite.SQLiteDatabase
 import android.inputmethodservice.InputMethodService
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.StrictMode
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.provider.Settings
@@ -34,31 +33,23 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.ExtractedText
 import android.view.inputmethod.ExtractedTextRequest
-import android.view.inputmethod.InputMethodManager
-import android.webkit.WebView
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.asynclayoutinflater.view.AsyncLayoutInflater
 import androidx.cardview.widget.CardView
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalContext
@@ -85,6 +76,7 @@ import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdOptions
 import com.google.android.gms.ads.nativead.NativeAdView
@@ -129,14 +121,12 @@ import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.domain.keyb
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.utilityClasses.selectKeyboard
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.keyboardLayout.MyKeyboard
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.preferences.Preferences
-import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.utilityClasses.AdObject.keyPadBannerFailedShowTime
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.utilityClasses.AdObject.nativeAdMobHashMapKeypad
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.utilityClasses.CustomFirebaseEvents
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.utilityClasses.ForegroundCheckTask
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.AdObject.keyPadBannerFailedShowTimeAdmob
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.AdObject.keyPadBannerFailedShowTimeMintegral
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.AdObject.nativeMintegralHashMapKeypad
-import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.DictionaryObject.suggestionList
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.KEYPAD_AD_MEDIATION
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.KEYPAD_AD_VISIBILITY
@@ -147,6 +137,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -163,7 +154,9 @@ class CustomImeService : InputMethodService(), LifecycleOwner, ViewModelStoreOwn
 
     lateinit var myContext: Context
 
-    var mainSuggestionList = suggestionList
+    var mainSuggestionList: MutableList<SuggestionItems> = mutableListOf()
+
+    var mFirebaseRemoteConfig: FirebaseRemoteConfig? = null
 
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
@@ -300,67 +293,70 @@ class CustomImeService : InputMethodService(), LifecycleOwner, ViewModelStoreOwn
         imeActionType = info.imeOptions and EditorInfo.IME_MASK_ACTION
     }
 
-    var mFirebaseRemoteConfig: FirebaseRemoteConfig? = null
 
 
-//    override fun onCreate() {
-//        // 1. Call super first and let it finish its critical setup
-//        super.onCreate()
-//        Log.i("CustomImeService", "onCreate()")
-//        try {
-//
-//            DataBaseCopyOperationsKt.init(this)
-//
-//            savedStateRegistryVar.performRestore(null)
-//            lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
-//
-//            // 4. Initialize Config values safely
-//            getInAppPurchases = DataBaseCopyOperationsKt.getInAppPurchases()
-//            getRemoteConfigVisibility = DataBaseCopyOperationsKt.getRemoteConfigVisibility()
-//            getRemoteConfigAdmob = DataBaseCopyOperationsKt.getRemoteConfigAdmob()
-//            getRemoteConfigMintegral = DataBaseCopyOperationsKt.getRemoteConfigMintegral()
-//
-//        } catch (e: Exception) {
-//            Log.e("CustomImeService", "Error in onCreate", e)
-//        }
-//    }
 
-    // Inside CustomImeService class
+
 
     override fun onCreate() {
-        super.onCreate()
+        super.onCreate() // View inflation happens here
         Log.i("CustomImeService", "onCreate()")
 
-        try {
-            // 1. Init Database helper (Assuming this is lightweight, if not, move inside launch)
-            DataBaseCopyOperationsKt.init(this)
 
+//        if (BuildConfig.DEBUG) {
+//            StrictMode.setThreadPolicy(
+//                StrictMode.ThreadPolicy.Builder()
+//                    .detectDiskReads()
+//                    .detectDiskWrites()
+//                    .detectNetwork()
+//                    .detectCustomSlowCalls()
+//                    .penaltyLog() // Prints the exact line of code to Logcat
+//                    .penaltyFlashScreen() // Flashes the screen red on your test device
+//                    // .penaltyDeath() // Uncomment this if you want the app to actually crash on purpose
+//                    .build()
+//            )
+//
+//            StrictMode.setVmPolicy(
+//                StrictMode.VmPolicy.Builder()
+//                    .detectLeakedClosableObjects()
+//                    .detectLeakedSqlLiteObjects()
+//                    .penaltyLog()
+//                    .build()
+//            )
+//        }
+
+
+
+        try {
             savedStateRegistryVar.performRestore(null)
             lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
 
-            // 2. ✅ FIX: Move heavy loading to IO Thread
-            // We use serviceScope (defined in your class) or a new scope
-            CoroutineScope(Dispatchers.IO).launch {
+            // MOVED EVERYTHING TO THE BACKGROUND
+            serviceScope.launch(Dispatchers.IO) {
                 try {
-                    // Read values from DB/Disk in background
+                    // 1. Initialize DB off the main thread
+                    DataBaseCopyOperationsKt.init(this@CustomImeService)
+                    MobileAds.initialize(this@CustomImeService) { initializationStatus ->
+                        Log.i("AdManagerDebug", "AdMob pre-warmed in background")
+                    }
+
+                    // 2. Read values from DB/Disk
                     val iap = DataBaseCopyOperationsKt.getInAppPurchases()
                     val configVis = DataBaseCopyOperationsKt.getRemoteConfigVisibility()
                     val configAdmob = DataBaseCopyOperationsKt.getRemoteConfigAdmob()
                     val configMintegral = DataBaseCopyOperationsKt.getRemoteConfigMintegral()
 
-                    // Update State on Main Thread (This will trigger Compose to update)
+                    // 3. Update State on Main Thread for Compose
                     withContext(Dispatchers.Main) {
                         getInAppPurchases = iap
                         getRemoteConfigVisibility = configVis
                         getRemoteConfigAdmob = configAdmob
                         getRemoteConfigMintegral = configMintegral
-                        Log.i("CustomImeService", "Config loaded asynchronously")
                     }
                 } catch (e: Exception) {
                     Log.e("CustomImeService", "Error loading config", e)
                 }
             }
-
         } catch (e: Exception) {
             Log.e("CustomImeService", "Error in onCreate", e)
         }
@@ -1099,17 +1095,6 @@ class CustomImeService : InputMethodService(), LifecycleOwner, ViewModelStoreOwn
     override val viewModelStore: ViewModelStore
         get() = store
 
-    fun hideKeyboard(imeService: CustomImeService) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            imeService.requestHideSelf(0)
-        } else {
-            @Suppress("DEPRECATION")
-            imeService.getSystemService(InputMethodManager::class.java)
-                ?.hideSoftInputFromInputMethod(imeService.currentInputBinding.connectionToken, 0)
-        }
-
-        imeService.requestHideSelf(0)
-    }
 
     private fun isFromGoogleServices(packageName: String): Boolean {
         return when (packageName) {
@@ -1207,18 +1192,6 @@ class CustomImeService : InputMethodService(), LifecycleOwner, ViewModelStoreOwn
 
 
     private fun saveAllRemoteConfigs() {
-        Log.e(
-            "NativeAdKeyboard",
-            "RemoteConfig : Native KEYPAD_AD_VISIBILITY :: " + mFirebaseRemoteConfig?.getBoolean(
-                KEYPAD_AD_VISIBILITY
-            )
-        )
-        Log.e(
-            "NativeAdKeyboard",
-            "RemoteConfig : Native KEYPAD_AD_MEDIATION :: " + mFirebaseRemoteConfig?.getString(
-                KEYPAD_AD_MEDIATION
-            )
-        )
         getInAppPurchases = DataBaseCopyOperationsKt.getInAppPurchases()
         val adVisibility = mFirebaseRemoteConfig?.getBoolean(KEYPAD_AD_VISIBILITY)
         val adMediationNetwork = mFirebaseRemoteConfig?.getString(KEYPAD_AD_MEDIATION)?.trim()
@@ -1388,68 +1361,20 @@ class ComposeKeyboardView(private val imeService: CustomImeService) :
         }
     }
 
-//    @Composable
-//    fun TriggerCode() {
-//        val context = LocalContext.current
-//        val showKeyboardBannerAd = isNetworkAvailable
-//        val isKeyboardOpen = imeService.isKeyboardOpen
-//
-//        // ✅ FIX: Use State to hold foreground status, don't block
-//        var isForeground by remember { mutableStateOf(false) }
-//
-//        // Check foreground status Asynchronously
-//        LaunchedEffect(Unit) {
-//            withContext(Dispatchers.IO) {
-//                try {
-//                    // Assuming ForegroundCheckTask returns Boolean
-//                    val result = !ForegroundCheckTask().execute(context).get()
-//                    // Note: calling .get() is still bad practice even in IO,
-//                    // but at least here it's off the main thread.
-//                    // Ideally, refactor ForegroundCheckTask to be a suspend function.
-//                    withContext(Dispatchers.Main) {
-//                        isForeground = result
-//                    }
-//                } catch (e: Exception) {
-//                    e.printStackTrace()
-//                }
-//            }
-//        }
-//
-//        Column {
-//            if (showKeyboardBannerAd && isKeyboardOpen) {
-//                val isNetworkReady = NetworkCheck.isNetworkAvailable(imeService.applicationContext)
-//                val isNoIAP = imeService.getInAppPurchases == 0
-//                val isRemoteConfigVisible = imeService.getRemoteConfigVisibility == 1
-//
-//                // Now use the state variable 'isForeground' instead of the blocking call
-//                if (isNetworkReady && isNoIAP && isRemoteConfigVisible && isForeground) {
-//                    if (imeService.getRemoteConfigAdmob == 1 && minutesPassedAdmob()) {
-//                        AdmobSafeContainer(imeService)
-//                    } else if (imeService.getRemoteConfigMintegral == 1 && minutesPassedMintegral()) {
-//                        MintegralSafeContainer(imeService)
-//                    }
-//                }
-//            }
-//
-//            MyKeyboard(
-//                imeService = imeService,
-//                vibrator = vibrator,
-//                context = imeService,
-//                inputConnection = imeService.currentInputConnection
-//            )
-//        }
-//    }
-
 
     @Composable
     private fun AdmobSafeContainer(imeService: CustomImeService) {
         val context = LocalContext.current
         val rootContainer = remember(context) { FrameLayout(context) }
+        LaunchedEffect(Unit) {
+            // Optional: Yield the thread briefly to let the keyboard fully pop up
+            delay(100)
 
-        DisposableEffect(rootContainer) {
-            val adCardView =
-                View.inflate(context, R.layout.card_view_ad_keypad_admob, null) as CardView
+            // Now inflate the view. Because we pre-warmed MobileAds in onCreate,
+            // this will no longer trigger heavy disk I/O.
+            val adCardView = View.inflate(context, R.layout.card_view_ad_keypad_admob, null) as CardView
             removeFromParent(adCardView)
+
             rootContainer.addView(
                 adCardView,
                 ViewGroup.LayoutParams(
@@ -1458,16 +1383,14 @@ class ComposeKeyboardView(private val imeService: CustomImeService) :
                 )
             )
 
-            val job = CoroutineScope(Dispatchers.Main).launch {
-                nativeAdCacheCheckAdmob(imeService, adCardView)
-            }
+            // Start checking cache and loading the ad
+            nativeAdCacheCheckAdmob(imeService, adCardView)
+        }
 
+        DisposableEffect(Unit) {
             onDispose {
-                job.cancel() // Stop coroutine
-
-                // ✅ NEW: Kill the Handler timer specifically when AdMob view dies
+                // Your cleanup code remains the same
                 handlerAd.removeCallbacks(reloadAdRunnable)
-
                 Log.e("NativeAdKeyboard", "AdMob Container Disposed - Handler Cleared")
             }
         }

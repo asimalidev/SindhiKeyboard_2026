@@ -92,20 +92,32 @@ class StickersViewActivity : AppCompatBaseActivity() {
     fun setStatusBarColor(activity: Activity, color: Int) {
         val window = activity.window
 
+        // 1. Make the Navigation Bar Transparent
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        window.statusBarColor = color
+
+        // 2. Disable the system "contrast scrim" (the semi-transparent overlay) on Android 10+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
+
+        // 3. Handle Edge-to-Edge and Padding
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) { // Android 15+
             window.decorView.setOnApplyWindowInsetsListener { view, insets ->
                 val statusBarInsets = insets.getInsets(WindowInsets.Type.statusBars())
+                val navBarInsets = insets.getInsets(WindowInsets.Type.navigationBars())
+
                 view.setBackgroundColor(color)
 
-                // Adjust padding to avoid overlap
-                view.setPadding(0, statusBarInsets.top, 0, 0)
+                // We KEEP this padding to prevent your views from merging with the bottom bar
+                view.setPadding(0, statusBarInsets.top, 0, navBarInsets.bottom)
+
                 insets
             }
         } else {
-            // For Android 14 and below
+            // Android 14 and below
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-            window.statusBarColor = color
         }
     }
 
