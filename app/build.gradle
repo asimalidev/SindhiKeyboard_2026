@@ -23,8 +23,8 @@ android {
         applicationId "com.sindhi.urdu.english.keybad"
         minSdk 23
         targetSdk 36
-        versionCode 67
-        versionName '6.3'
+        versionCode 66
+        versionName '6.2'
         multiDexEnabled true
         setProperty("archivesBaseName","SindhiKeyboard_VN" + versionName + "("+versionCode+")_" + new Date().format('dd-MM-YYYY'))
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
