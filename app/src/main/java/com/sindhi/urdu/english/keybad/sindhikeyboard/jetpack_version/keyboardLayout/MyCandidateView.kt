@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
@@ -46,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -227,7 +229,6 @@ fun MyCandidateView(
 
             SuggestionRow(
                 items = imeService?.filterList?.value ?: emptyList(),
-                context = context,
                 onItemClick = { clickedItem ->
                     var selectedSuggestion = ""
                     selectedSuggestion = if (getSelectedLanguage(context!!).equals("English")) {
@@ -453,39 +454,51 @@ fun MyCandidateView(
 @Composable
 fun SuggestionRow(
     items: List<SuggestionItems>,
-    context: Context?,
-    onItemClick: (SuggestionItems) -> Unit) {
+    onItemClick: (SuggestionItems) -> Unit
+) {
+    val context = LocalContext.current
+    val language = remember(context) { getSelectedLanguage(context) }
+    val listState = rememberLazyListState()
+
     LazyRow(
+        state = listState,
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(horizontal = 8.dp)
     ) {
-        itemsIndexed(items) { index, item ->
-            Row(modifier = Modifier
-                .padding(horizontal = 2.dp, vertical = 6.dp)
-                .widthIn(min = 100.dp)
-                .fillMaxWidth()) {
+        itemsIndexed(
+            items = items,
+            // Key helps prevent crashes during rapid list updates
+            key = { _, item -> item.hashCode() }
+        ) { index, item ->
 
-                var wordSuggestion = ""
-                if (getSelectedLanguage(context!!) == "English") {
-                    wordSuggestion = item.engRomanWordsSuggestion ?: ""
-                } else {
-                    wordSuggestion = item.urduWordsSuggestion ?: ""
-                }
+            val wordSuggestion = if (language == "English") {
+                item.engRomanWordsSuggestion
+            } else {
+                item.urduWordsSuggestion
+            } ?: ""
 
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(vertical = 6.dp)
+                    .widthIn(min = 80.dp) // Removed fillMaxWidth()
+                    .clickable { onItemClick(item) }
+                    .padding(horizontal = 4.dp)
+            ) {
                 Text(
                     text = wordSuggestion,
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier
-                        .clickable { onItemClick(item) }
-                        .fillMaxWidth())
+                )
 
                 if (index < items.size - 1) {
+                    // Vertical divider in a Row needs a specific height
+                    // or the Row needs .intrinsicSize(IntrinsicSize.Min)
                     Divider(
                         modifier = Modifier
-                            .fillMaxHeight()
-                            .width(2.dp)
-                            .padding(start = 2.dp, end = 2.dp),
+                            .height(20.dp)
+                            .padding(start = 8.dp)
+                            .width(1.dp),
                         color = Color.Gray
                     )
                 }

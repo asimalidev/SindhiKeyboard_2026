@@ -558,10 +558,15 @@ fun CustomKey(
     ) {
         // Main key content
         if (key.shouldShowIcon) {
+            // Cache the painter so it's only loaded once per key
+            val painter = painterResource(id = icon)
+
             Icon(
-                painter = painterResource(id = icon),
+                painter = painter,
                 contentDescription = key.contentDescription,
-                tint = if (key.labelMain == LABEL_CAPS || key.labelMain == LABEL_123 || key.labelMain == LABEL_DELETE) specialTint else textColor
+                tint = if (key.labelMain == LABEL_CAPS ||
+                    key.labelMain == LABEL_123 ||
+                    key.labelMain == LABEL_DELETE) specialTint else textColor
             )
         } else {
             if (key.shouldShowLanguageName) {

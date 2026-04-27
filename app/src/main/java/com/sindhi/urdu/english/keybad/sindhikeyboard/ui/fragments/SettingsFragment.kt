@@ -35,6 +35,7 @@ import com.sindhi.urdu.english.keybad.sindhikeyboard.ads.NewNativeAdClass
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.preferences.Preferences.ADS_NATIVE_SETTINGS
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.preferences.Preferences.COLLAPSIBLE_SETTINGS
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.screens.PreferenceScreen
+import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.FirebaseLog
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.BANNER_INSIDE
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.IS_PURCHASED
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.NATIVE_OVER_ALL
@@ -68,7 +69,7 @@ class SettingsFragment : Fragment() {
         }
 
         bundle.putString("SettingsFragment", "SettingsFragment")
-        ApplicationClass.firebaseAnalyticsEventsLog.logEvent("event_settings", bundle)
+        FirebaseLog.getAnalytics(requireContext()).logEvent("event_settings", bundle)
 
         if (isAdded) {
             navController = findNavController()

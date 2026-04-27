@@ -28,6 +28,7 @@ import com.sindhi.urdu.english.keybad.sindhikeyboard.ads.NetworkCheck
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ads.NewNativeAdClass
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ads.TinyDB
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.preferences.Preferences
+import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.FirebaseLog
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.PURCHASE
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.IS_PURCHASED
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.NATIVE_CONVERSATION
@@ -54,7 +55,7 @@ class fromcountry_fragment : Fragment() {
         val root: View = binding.root
         isNavControllerAdded()
         bundle.putString("LanguageChangeFragment","LanguageChangeFragment")
-        ApplicationClass.firebaseAnalyticsEventsLog.logEvent("event_language_change", bundle)
+        FirebaseLog.getAnalytics(requireContext()).logEvent("event_language_change", bundle)
 
         isPurchased = requireContext().getSharedPreferences(REMOTE_CONFIG, MODE_PRIVATE)?.getBoolean(IS_PURCHASED, false) == true
         val mSharedPreferences = android.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())

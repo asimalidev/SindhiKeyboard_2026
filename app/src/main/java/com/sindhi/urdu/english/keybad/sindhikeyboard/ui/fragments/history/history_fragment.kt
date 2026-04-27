@@ -44,6 +44,7 @@ import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.blockingClickListener
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ui.fragments.history.roomDb.ConversationExtension
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ui.fragments.history.roomDb.HistoryViewModel
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ui.fragments.history.roomDb.viewmodelfactory
+import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.FirebaseLog
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.ADS_BANNER_HISTORY
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.BANNER_INSIDE
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.INTER_OVER_ALL
@@ -88,7 +89,7 @@ class history_fragment : Fragment(), HistoryConversationAdapter.HistoryConversat
         isPurchase = requireContext().getSharedPreferences(REMOTE_CONFIG, MODE_PRIVATE)?.getBoolean(IS_PURCHASED, false) == true
         checkForLoadBanner()
         bundle.putString("HistoryFragment", "HistoryFragment")
-        ApplicationClass.firebaseAnalyticsEventsLog.logEvent("event_history", bundle)
+        FirebaseLog.getAnalytics(requireContext()).logEvent("event_history", bundle)
         conversationExtensionAdapterList = ArrayList()
         conversationExtensionForwardList = ArrayList()
 

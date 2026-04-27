@@ -77,6 +77,7 @@ import com.sindhi.urdu.english.keybad.sindhikeyboard.ui.fragments.history.roomDb
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ui.fragments.history.roomDb.ConversationExtensionTemp
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ui.fragments.history.roomDb.HistoryViewModel
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ui.fragments.history.roomDb.viewmodelfactory
+import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.FirebaseLog
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.BANNER_INSIDE
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.IS_PURCHASED
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.NATIVE_CONVERSATION
@@ -186,7 +187,7 @@ class ConversationFragment : Fragment(), TextToSpeech.OnInitListener {
         }
 
         bundle.putString("ConversationFragment", "ConversationFragment")
-        ApplicationClass.firebaseAnalyticsEventsLog.logEvent("event_conversation", bundle)
+        FirebaseLog.getAnalytics(requireContext()).logEvent("event_conversation", bundle)
 
         mSharedPreferences =
             android.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())

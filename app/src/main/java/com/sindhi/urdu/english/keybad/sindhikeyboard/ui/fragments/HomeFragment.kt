@@ -52,6 +52,7 @@ import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.preferences
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.utilityClasses.CustomFirebaseEvents
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ui.activities.FOFStartActivity
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ui.activities.StickersViewActivity
+import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.FirebaseLog
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.PURCHASE
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.BANNER_INSIDE
@@ -305,7 +306,7 @@ class HomeFragment : Fragment(), IBillingHandler {
         }
 
         bundle.putString("HomeFragment", "HomeFragment")
-        ApplicationClass.firebaseAnalyticsEventsLog.logEvent("event_home", bundle)
+        FirebaseLog.getAnalytics(requireContext()).logEvent("event_home", bundle)
 
         requireActivity().onBackPressedDispatcher.addCallback(
             viewLifecycleOwner,
@@ -474,7 +475,7 @@ class HomeFragment : Fragment(), IBillingHandler {
     private fun onBtnDisableClick() {
         bundle = Bundle()
         bundle.putString("HomeFragment_DisableKeyboard", "HomeFragment_DisableKeyboard")
-        ApplicationClass.firebaseAnalyticsEventsLog.logEvent("event_home_disable_keyboard", bundle)
+        FirebaseLog.getAnalytics(requireContext()).logEvent("event_home_disable_keyboard", bundle)
         try {
             val mgr =
                 requireActivity().getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE) as InputMethodManager

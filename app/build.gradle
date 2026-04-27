@@ -23,8 +23,8 @@ android {
         applicationId "com.sindhi.urdu.english.keybad"
         minSdk 23
         targetSdk 36
-        versionCode 66
-        versionName '6.2'
+        versionCode 67
+        versionName '6.3'
         multiDexEnabled true
         setProperty("archivesBaseName","SindhiKeyboard_VN" + versionName + "("+versionCode+")_" + new Date().format('dd-MM-YYYY'))
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -75,6 +75,8 @@ android {
             resValue "string", "MINTEGRAL_BANNER_KEYPAD", '"2339869-5085280"'
             resValue "string", "NATIVE_INSIDE_BIDDING", '"ca-app-pub-3747520410546258/8117321523"'
 
+            resValue("string", "RESUME_OVER_ALL", "ca-app-pub-3747520410546258/7925749832")
+
         }
 
         debug {
@@ -110,6 +112,9 @@ android {
             resValue "string", "ADMOB_NATIVE_WALKTHROUGH_3", '"ca-app-pub-3940256099942544/2247696110"'
             resValue("string", "ADMOB_NATIVE_WALKTHROUGH_2", "ca-app-pub-3940256099942544/2247696110")
             resValue("string", "ADMOB_INTERSTITIAL_LETS_START", "ca-app-pub-3940256099942544/1033173712")
+
+
+            resValue("string", "RESUME_OVER_ALL", "ca-app-pub-3940256099942544/9257395921")
 
             resValue "string", "INTERSTITIAL_INSIDE_BIDDING", '"ca-app-pub-3940256099942544/1033173712"'
             resValue "string", "NATIVE_INSIDE_BIDDING", '"ca-app-pub-3940256099942544/2247696110"'
@@ -206,4 +211,5 @@ dependencies {
     implementation(libs.billing.ktx)
     implementation("androidx.compose.material:material-icons-extended")
     implementation "androidx.asynclayoutinflater:asynclayoutinflater:1.0.0"
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
 }

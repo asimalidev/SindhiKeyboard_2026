@@ -38,6 +38,7 @@ import com.sindhi.urdu.english.keybad.sindhikeyboard.ads.NetworkCheck
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ads.NewNativeAdClass
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.preferences.Preferences.ADS_NATIVE_SELECT_KEYBOARD
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.preferences.Preferences.COLLAPSIBLE_SELECT_KEYBOARD
+import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.FirebaseLog
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.PURCHASE
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.BANNER_INSIDE
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.IS_PURCHASED
@@ -79,7 +80,9 @@ class KeyboardSelectionActivity : AppCompatBaseActivity() {
 
 
         bundle.putString("SelectKeyboardActivity","SelectKeyboardActivity")
-        ApplicationClass.firebaseAnalyticsEventsLog.logEvent("event_select_keyboard", bundle)
+        FirebaseLog.getAnalytics(this).logEvent("event_select_keyboard", bundle)
+
+
         supportActionBar?.hide()
       isPurchased = getSharedPreferences(REMOTE_CONFIG, MODE_PRIVATE)?.getBoolean(IS_PURCHASED, false) == true
 

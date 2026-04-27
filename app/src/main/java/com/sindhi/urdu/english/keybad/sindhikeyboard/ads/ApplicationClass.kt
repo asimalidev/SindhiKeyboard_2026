@@ -26,38 +26,33 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
 
-
-
 class ApplicationClass : Application() {
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
         lateinit var applicationClass: ApplicationClass
-
-        val firebaseAnalyticsEventsLog: FirebaseAnalytics by lazy {
-            FirebaseAnalytics.getInstance(applicationClass)
-        }
-
         var selectedTheme: CustomTheme? = null
         const val logTagAdmob = "NativeAdKeyboardAdmob"
         var imageUriUrduEditorBackgrounds: Uri? = null
         const val logTagMintegral = "NativeAdKeyboardMintegral"
         const val ACTION_CONFIG_CHANGED = "com.sindhi.urdu.english.keybad.CONFIG_CHANGED"
         private const val TAG = "ApplicationClass"
-        var suggestionList = mutableListOf<SuggestionItems>()
     }
 
     override fun onCreate() {
         super.onCreate()
         applicationClass = this
 
-//        FirebaseApp.initializeApp(this) // <-- RESTORED
+        // FirebaseApp.initializeApp(this) // <-- RESTORED
 
-        // 2. Use your shared scope to launch background tasks
+        // Use your shared scope to launch background tasks
         applicationScope.launch {
             initShortCut()
-            setupRemoteConfig() // <-- RESTORED
-            preloadSuggestionListIfNeeded()
+            setupRemoteConfig()
+
+            // INSTEAD OF PRELOADING WORDS:
+            // Just initialize the database so it is copied and ready for SQLite queries
+            DataBaseCopyOperationsKt.init(applicationClass)
         }
     }
 
@@ -111,7 +106,6 @@ class ApplicationClass : Application() {
         }
     }
 
-
     private fun setupRemoteConfig() {
         val remoteConfig = FirebaseRemoteConfig.getInstance()
         val configSettings = FirebaseRemoteConfigSettings.Builder()
@@ -123,7 +117,7 @@ class ApplicationClass : Application() {
 
         remoteConfig.addOnConfigUpdateListener(object : ConfigUpdateListener {
             override fun onUpdate(configUpdate: ConfigUpdate) {
-                if (configUpdate.updatedKeys.contains("KEYPAD_AD_MEDIATION") || // Replaced constant with string for safety if it was declared outside
+                if (configUpdate.updatedKeys.contains("KEYPAD_AD_MEDIATION") ||
                     configUpdate.updatedKeys.contains("KEYPAD_AD_VISIBILITY")
                 ) {
                     remoteConfig.activate().addOnCompleteListener {
@@ -139,22 +133,6 @@ class ApplicationClass : Application() {
                 Log.w(TAG, "Config update failed with code: ${error.code}", error)
             }
         })
-    }
-
-
-
-    private suspend fun preloadSuggestionListIfNeeded() {
-        if (suggestionList.isEmpty()) {
-            try {
-                val items = DataBaseCopyOperationsKt.getAllItems()
-                withContext(Dispatchers.Main) {
-                    suggestionList = items.toMutableList()
-                    Log.e("DataBaseCopyOperations", "Loaded SuggestionList: ${suggestionList.size}")
-                }
-            } catch (e: Exception) {
-                Log.e("DataBaseCopyOperations", "Failed to preload suggestions", e)
-            }
-        }
     }
 }
 

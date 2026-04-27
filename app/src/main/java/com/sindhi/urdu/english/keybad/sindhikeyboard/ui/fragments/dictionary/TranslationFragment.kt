@@ -39,6 +39,7 @@ import com.sindhi.urdu.english.keybad.sindhikeyboard.ads.NewNativeAdClass
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.preferences.Preferences
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.preferences.Preferences.ADS_NATIVE_TRANSLATION_HOME
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.preferences.Preferences.COLLAPSIBLE_TRANSLATION
+import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.FirebaseLog
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.PURCHASE
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.BANNER_INSIDE
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.IS_PURCHASED
@@ -165,7 +166,7 @@ class TranslationFragment : Fragment() {
         isNavControllerAdded()
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
         bundle.putString("TranslationFragment", "TranslationFragment")
-        ApplicationClass.firebaseAnalyticsEventsLog.logEvent("event_translation", bundle)
+        FirebaseLog.getAnalytics(requireContext()).logEvent("event_translation", bundle)
 
 //        requireActivity().onBackPressedDispatcher
 //            .addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {

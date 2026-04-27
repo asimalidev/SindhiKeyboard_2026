@@ -180,6 +180,43 @@ class CustomImeService : InputMethodService(), LifecycleOwner, ViewModelStoreOwn
     var getRemoteConfigAdmob by mutableIntStateOf(0)
     var getRemoteConfigMintegral by mutableIntStateOf(0)
 
+    var isAppInForeground by mutableStateOf(true)
+    var canShowAdmob by mutableStateOf(false)
+    var canShowMintegral by mutableStateOf(false)
+
+    fun evaluateAdConditions() {
+        serviceScope.launch(Dispatchers.IO) {
+            val foreground = try {
+                !ForegroundCheckTask().execute(myContext).get()
+            } catch (e: Exception) {
+                true
+            } // Default to true on failure for IME
+
+            val admobTime = try {
+                DataBaseCopyOperationsKt.getKeyPadBannerFailedShowTimeAdmob().toLong()
+            } catch (e: Exception) {
+                0L
+            }
+            val mintegralTime = try {
+                DataBaseCopyOperationsKt.getKeyPadBannerFailedShowTimeMintegral().toLong()
+            } catch (e: Exception) {
+                0L
+            }
+            val currentTime = System.currentTimeMillis()
+
+            val admobPassed = admobTime == 0L || (currentTime - admobTime) >= (45 * 60 * 1000)
+            val mintegralPassed =
+                mintegralTime == 0L || (currentTime - mintegralTime) >= (5 * 60 * 1000)
+
+            withContext(Dispatchers.Main) {
+                // Updating these variables triggers Compose to show the ad
+                isAppInForeground = foreground
+                canShowAdmob = admobPassed
+                canShowMintegral = mintegralPassed
+            }
+        }
+    }
+
     fun init(context: Context) {
         if (!::myContext.isInitialized) {
             myContext = context.applicationContext
@@ -292,47 +329,8 @@ class CustomImeService : InputMethodService(), LifecycleOwner, ViewModelStoreOwn
         imeActionType = info.imeOptions and EditorInfo.IME_MASK_ACTION
     }
 
-//    override fun onCreate() {
-//        super.onCreate() // View inflation happens here
-//        Log.i("CustomImeService", "onCreate()")
-//        try {
-//            savedStateRegistryVar.performRestore(null)
-//            lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
-//
-//            // MOVED EVERYTHING TO THE BACKGROUND
-//            serviceScope.launch(Dispatchers.IO) {
-//                try {
-//                    // 1. Initialize DB off the main thread
-//                    DataBaseCopyOperationsKt.init(this@CustomImeService)
-//                    MobileAds.initialize(this@CustomImeService) { initializationStatus ->
-//                        Log.i("AdManagerDebug", "AdMob pre-warmed in background")
-//                    }
-//
-//                    // 2. Read values from DB/Disk
-//                    val iap = DataBaseCopyOperationsKt.getInAppPurchases()
-//                    val configVis = DataBaseCopyOperationsKt.getRemoteConfigVisibility()
-//                    val configAdmob = DataBaseCopyOperationsKt.getRemoteConfigAdmob()
-//                    val configMintegral = DataBaseCopyOperationsKt.getRemoteConfigMintegral()
-//
-//                    // 3. Update State on Main Thread for Compose
-//                    withContext(Dispatchers.Main) {
-//                        getInAppPurchases = iap
-//                        getRemoteConfigVisibility = configVis
-//                        getRemoteConfigAdmob = configAdmob
-//                        getRemoteConfigMintegral = configMintegral
-//                    }
-//                } catch (e: Exception) {
-//                    Log.e("CustomImeService", "Error loading config", e)
-//                }
-//            }
-//        } catch (e: Exception) {
-//            Log.e("CustomImeService", "Error in onCreate", e)
-//        }
-//    }
-
     override fun onCreate() {
         super.onCreate() // View inflation happens here
-        Log.i("CustomImeService", "onCreate()")
         try {
             savedStateRegistryVar.performRestore(null)
             lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
@@ -359,7 +357,9 @@ class CustomImeService : InputMethodService(), LifecycleOwner, ViewModelStoreOwn
                 }
             }
         } catch (e: Exception) {
-            Log.e("CustomImeService", "Error in onCreate", e)
+            if (BuildConfig.DEBUG) {
+                Log.e("CustomImeService", "Error in onCreate", e)
+            }
         }
     }
 
@@ -466,6 +466,7 @@ class CustomImeService : InputMethodService(), LifecycleOwner, ViewModelStoreOwn
             it.setViewTreeViewModelStoreOwner(this)
             it.setViewTreeSavedStateRegistryOwner(this)
         }
+
         return view
     }
 
@@ -622,7 +623,10 @@ class CustomImeService : InputMethodService(), LifecycleOwner, ViewModelStoreOwn
         // Shift this IPC call to a background thread!
         return withContext(Dispatchers.IO) {
             try {
-                currentInputConnection?.getExtractedText(ExtractedTextRequest(), 0)?.text?.toString() ?: ""
+                currentInputConnection?.getExtractedText(
+                    ExtractedTextRequest(),
+                    0
+                )?.text?.toString() ?: ""
             } catch (e: Exception) {
                 Log.e("CustomImeService", "Failed to extract text", e)
                 ""
@@ -1081,25 +1085,27 @@ class CustomImeService : InputMethodService(), LifecycleOwner, ViewModelStoreOwn
         }
     }
 
-    private val savedStateRegistryVar = SavedStateRegistryController.create(this)
+    private val savedStateRegistryVar by lazy { SavedStateRegistryController.create(this) }
 
     override val savedStateRegistry: SavedStateRegistry
         get() = savedStateRegistryVar.savedStateRegistry
 
     //Lifecycle Methods
-    private var lifecycleRegistry: LifecycleRegistry = LifecycleRegistry(this)
-
+    private val lifecycleRegistry by lazy { LifecycleRegistry(this) }
     override val lifecycle: Lifecycle
         get() = lifecycleRegistry
+
+    //ViewModelStore Methods
+    private val store by lazy { ViewModelStore() }
+
+    override val viewModelStore: ViewModelStore
+        get() = store
+
 
     private fun handleLifecycleEvent(event: Lifecycle.Event) =
         lifecycleRegistry.handleLifecycleEvent(event)
 
     //ViewModelStore Methods
-    private val store = ViewModelStore()
-
-    override val viewModelStore: ViewModelStore
-        get() = store
 
 
     private fun isFromGoogleServices(packageName: String): Boolean {
@@ -1249,7 +1255,6 @@ class ComposeKeyboardView(private val imeService: CustomImeService) :
     init {
         // Load network availability asynchronously
         checkNetworkAvailabilityAsync()
-
         handlerAd = Handler(Looper.getMainLooper())
         reloadAdRunnable = Runnable {
             Log.e(logTag, "Run: ")
@@ -1317,46 +1322,35 @@ class ComposeKeyboardView(private val imeService: CustomImeService) :
         TriggerCode()
     }
 
-
     @Composable
     fun TriggerCode() {
         val context = LocalContext.current
-        val showKeyboardBannerAd = isNetworkAvailable
+        val isNetworkReady = isNetworkAvailable
         val isKeyboardOpen = imeService.isKeyboardOpen
-        val isPurchase =
+
+        // 1. TRIGGER THE CALCULATION HERE
+        LaunchedEffect(isKeyboardOpen) {
+            if (isKeyboardOpen) {
+                imeService.evaluateAdConditions()
+            }
+        }
+
+        // 2. Read the pre-calculated state (these must be mutableStateOf in your Service)
+        val isForeground = imeService.isAppInForeground
+        val isNoIAP = imeService.getInAppPurchases == 0
+        val isRemoteConfigVisible = imeService.getRemoteConfigVisibility == 1
+        val isPurchase = remember {
             imeService.getSharedPreferences(RemoteConfigConst.REMOTE_CONFIG, Context.MODE_PRIVATE)
                 .getBoolean(Preferences.IS_PURCHASED, false)
-
-        // Keep these explicitly if you need them to force recomposition,
-        // otherwise they might not be needed if only used in the if-check.
-        val continuousLooperState = continuousLooper
+        }
 
         Column {
-            if (showKeyboardBannerAd && isKeyboardOpen) {
-                // moved logs outside the composition-critical path
-                Log.e(
-                    logTagAdmob,
-                    "TriggerCode: Network: " + NetworkCheck.isNetworkAvailable(imeService.applicationContext)
-                )
-
-                val isNetworkReady = NetworkCheck.isNetworkAvailable(imeService.applicationContext)
-                val isNoIAP = imeService.getInAppPurchases == 0
-                val isRemoteConfigVisible = imeService.getRemoteConfigVisibility == 1
-                // Warning: .get() on main thread can cause ANRs.
-                val isForeground = try {
-                    !ForegroundCheckTask().execute(context).get()
-                } catch (e: Exception) {
-                    false
-                }
-
-                if (isNetworkReady && isNoIAP && !isPurchase && isRemoteConfigVisible && isForeground) {
-                    if (imeService.getRemoteConfigAdmob == 1 && minutesPassedAdmob()) {
-                        // Use the new specialized container
-                        AdmobSafeContainer(imeService)
-                    } else if (imeService.getRemoteConfigMintegral == 1 && minutesPassedMintegral()) {
-                        // Use the new specialized container
-                        MintegralSafeContainer(imeService)
-                    }
+            // 3. Show the ad if conditions are met
+            if (isNetworkReady && isKeyboardOpen && isNoIAP && !isPurchase && isRemoteConfigVisible && isForeground) {
+                if (imeService.getRemoteConfigAdmob == 1 && imeService.canShowAdmob) {
+                    AdmobSafeContainer(imeService)
+                } else if (imeService.getRemoteConfigMintegral == 1 && imeService.canShowMintegral) {
+                    MintegralSafeContainer(imeService)
                 }
             }
 
@@ -1380,7 +1374,8 @@ class ComposeKeyboardView(private val imeService: CustomImeService) :
 
             // Now inflate the view. Because we pre-warmed MobileAds in onCreate,
             // this will no longer trigger heavy disk I/O.
-            val adCardView = View.inflate(context, R.layout.card_view_ad_keypad_admob, null) as CardView
+            val adCardView =
+                View.inflate(context, R.layout.card_view_ad_keypad_admob, null) as CardView
             removeFromParent(adCardView)
 
             rootContainer.addView(
@@ -1487,7 +1482,6 @@ class ComposeKeyboardView(private val imeService: CustomImeService) :
     }
 
 
-
     private fun reloadAdAdmob(
         mContext: CustomImeService?,
         shimmerBanner: ShimmerFrameLayout,
@@ -1533,7 +1527,10 @@ class ComposeKeyboardView(private val imeService: CustomImeService) :
                     handlerAd.removeCallbacks(reloadAdRunnable)
 
                     val currTime = System.currentTimeMillis()
-                    nativeAdMobHashMapKeypad?.set(mContext::class.java.name, Pair(mNativeAd, currTime))
+                    nativeAdMobHashMapKeypad?.set(
+                        mContext::class.java.name,
+                        Pair(mNativeAd, currTime)
+                    )
 
                     handlerAd.postDelayed(reloadAdRunnable, 1500000) // 25 min
                     populateNativeAdmob(mNativeAd, shimmerBanner, defaultAdviewBanner)
@@ -1547,6 +1544,18 @@ class ComposeKeyboardView(private val imeService: CustomImeService) :
                 builder.withNativeAdOptions(adOptions)
 
                 val adLoader = builder.withAdListener(object : AdListener() {
+//                    override fun onAdFailedToLoad(errorCode: LoadAdError) {
+//                        timeoutHandler.removeCallbacks(timeoutRunnable)
+//                        Log.e(logTagAdmob, "Admob Native Failed to Load: $errorCode")
+//                        CustomFirebaseEvents.nativeKeypadAdEvent(mContext, "AdmobOnAdFailedToLoad")
+//
+//                        shimmerBanner.stopShimmer()
+//                        shimmerBanner.visibility = View.GONE
+//                        defaultAdviewBanner.visibility = View.GONE
+//
+//                        nativeAdMobHashMapKeypad?.remove(mContext::class.java.name)
+//                    }
+
                     override fun onAdFailedToLoad(errorCode: LoadAdError) {
                         timeoutHandler.removeCallbacks(timeoutRunnable)
                         Log.e(logTagAdmob, "Admob Native Failed to Load: $errorCode")
@@ -1557,6 +1566,10 @@ class ComposeKeyboardView(private val imeService: CustomImeService) :
                         defaultAdviewBanner.visibility = View.GONE
 
                         nativeAdMobHashMapKeypad?.remove(mContext::class.java.name)
+
+                        // ADD THESE TWO LINES TO BREAK THE INFINITE LOOP
+                        saveCurrentTimeAdmob()
+                        mContext.canShowAdmob = false
                     }
 
                     override fun onAdClicked() {
@@ -1572,7 +1585,11 @@ class ComposeKeyboardView(private val imeService: CustomImeService) :
                         Log.e(logTagAdmob, "Admob Native Loaded..")
 
                         if (BuildConfig.DEBUG) {
-                            Toast.makeText(mContext, "Keypad :: AdMob :: Loaded", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                mContext,
+                                "Keypad :: AdMob :: Loaded",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
                 }).build()
@@ -1581,7 +1598,8 @@ class ComposeKeyboardView(private val imeService: CustomImeService) :
                 adLoader.loadAd(adRequest)
 
                 if (BuildConfig.DEBUG) {
-                    Toast.makeText(mContext, "Keypad :: AdMob :: Request", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(mContext, "Keypad :: AdMob :: Request", Toast.LENGTH_SHORT)
+                        .show()
                 }
 
             } catch (e: Exception) {
@@ -1738,6 +1756,20 @@ class ComposeKeyboardView(private val imeService: CustomImeService) :
         )
 
         defaultAdviewBanner.setBannerAdListener(object : BannerAdListener {
+//            override fun onLoadFailed(p0: MBridgeIds?, p1: String?) {
+//                timeoutHandler.removeCallbacks(timeoutRunnable)
+//                Log.e(logTagMintegral, "onLoadFailed() : " + p1)
+//                CustomFirebaseEvents.nativeKeypadAdEvent(mContext, "MintegralOnAdFailedToLoad")
+//
+//                frameLayout.visibility = View.GONE
+//
+//                if (nativeMintegralHashMapKeypad!!.containsKey(mContext::class.java.name)) {
+//                    nativeMintegralHashMapKeypad!!.remove(mContext::class.java.name)
+//                }
+//
+//                saveCurrentTimeMintegral()
+//            }
+
             override fun onLoadFailed(p0: MBridgeIds?, p1: String?) {
                 timeoutHandler.removeCallbacks(timeoutRunnable)
                 Log.e(logTagMintegral, "onLoadFailed() : " + p1)
@@ -1750,6 +1782,9 @@ class ComposeKeyboardView(private val imeService: CustomImeService) :
                 }
 
                 saveCurrentTimeMintegral()
+
+                // ADD THIS ONE LINE TO BREAK THE INFINITE LOOP
+                mContext.canShowMintegral = false
             }
 
             override fun onLoadSuccessed(p0: MBridgeIds?) {

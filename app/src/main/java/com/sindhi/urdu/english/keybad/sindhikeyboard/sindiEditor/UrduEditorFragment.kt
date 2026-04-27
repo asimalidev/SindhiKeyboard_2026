@@ -101,11 +101,12 @@ class UrduEditorFragment : Fragment() {
                     imageUriUrduEditorBackgrounds = it
                     backgroundBitmap = createBitmapFromUri(it)
                     binding.textEditorView.setBackgroundImage(bitmap = backgroundBitmap)
-                    Log.i("UrduEditorFragment", "MyUriTAG 1 : $imageUriUrduEditorBackgrounds")
                 }
             }
+
         setupTextEditorView()
         isNavControllerAdded()
+
         binding.tvAddText.blockingClickListener {
             addTextItem("")
             handleEditText()
@@ -170,7 +171,6 @@ class UrduEditorFragment : Fragment() {
                 stickerViewModel.fetchStickers()
             }
         }
-
         val gridSpanCount = 4
         val layoutManager = GridLayoutManager(requireActivity(), gridSpanCount)
         layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
@@ -208,6 +208,7 @@ class UrduEditorFragment : Fragment() {
                 stickersAdapter.updateData(combinedList)
             }
         }
+
     }
 
     private fun addStickerToTextEditorView(drawable: Drawable) {
@@ -378,13 +379,11 @@ class UrduEditorFragment : Fragment() {
     }
 
     private fun imgSaveOrShare(bitmap: Bitmap, context: Context, notInCache: Boolean = false) {
-//        val savedUri = binding.textEditorView.saveBitmapAsPng(bitmap, context)
         val savedUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             binding.textEditorView.saveBitmapAsPng(bitmap, context)
         } else {
             binding.textEditorView.saveBitmapToLegacyStorage(bitmap, context)
         }
-
         binding.rvFonts.adapter = fontsAdapter
         if (!notInCache) {
             if (savedUri != null) {
@@ -822,7 +821,6 @@ class UrduEditorFragment : Fragment() {
         binding.ivAlignEnd.setBackgroundResource(0)
     }
 
-
     private fun ivDoneEditingClicked() {
         Log.e("UrduEditorFragment", "ivDoneEditingClicked()")
 
@@ -868,7 +866,6 @@ class UrduEditorFragment : Fragment() {
             binding.clExitDialog.visibility = View.GONE
         }
     }
-
 
     private fun ivDismissEditingClicked() {
         Log.e("UrduEditorFragment", "ivDismissEditingClicked()")

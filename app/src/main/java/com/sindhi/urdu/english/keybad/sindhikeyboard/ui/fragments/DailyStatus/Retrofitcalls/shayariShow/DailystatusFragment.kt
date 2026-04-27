@@ -38,6 +38,7 @@ import com.sindhi.urdu.english.keybad.sindhikeyboard.ui.fragments.DailyStatus.Re
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ui.ViewmodelFactory.staffviewmodelsfactory
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ui.fragments.DailyStatus.Retrofitcalls.models.Cat_Update
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ui.fragments.DailyStatus.Retrofitcalls.models.dailystatusResponse
+import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.FirebaseLog
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.IS_PURCHASED
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.REMOTE_CONFIG
 import okhttp3.OkHttpClient
@@ -62,7 +63,7 @@ class DailystatusFragment : Fragment(), shayaricategoryclicklistner {
         isNavControllerAdded()
 
         bundle.putString("DailyStatusFragment","DailyStatusFragment")
-        ApplicationClass.firebaseAnalyticsEventsLog.logEvent("event_daily_status", bundle)
+        FirebaseLog.getAnalytics(requireContext()).logEvent("event_daily_status", bundle)
         
         val BASE_URL = "https://solutionoftechnologies.com/daily_urdu_qoutes/"
         val cacheSize = (10 * 1024 * 1024).toLong()

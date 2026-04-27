@@ -35,6 +35,7 @@ import com.sindhi.urdu.english.keybad.sindhikeyboard.ads.NetworkCheck.Companion.
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ads.NewNativeAdClass
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.preferences.Preferences
 import com.sindhi.urdu.english.keybad.sindhikeyboard.jetpack_version.screens.ThemesScreen
+import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.FirebaseLog
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.BANNER_INSIDE
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.BANNER_THEMES_LIST
 import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.RemoteConfigConst.IS_PURCHASED
@@ -127,7 +128,7 @@ class ThemesFragment : Fragment() {
             }
         }
         bundle.putString("ThemesFragment", "ThemesFragment")
-        ApplicationClass.firebaseAnalyticsEventsLog.logEvent("event_themes", bundle)
+        FirebaseLog.getAnalytics(requireContext()).logEvent("event_themes", bundle)
 
         isPurchase = requireContext().getSharedPreferences(REMOTE_CONFIG, MODE_PRIVATE)
             ?.getBoolean(IS_PURCHASED, false) == true

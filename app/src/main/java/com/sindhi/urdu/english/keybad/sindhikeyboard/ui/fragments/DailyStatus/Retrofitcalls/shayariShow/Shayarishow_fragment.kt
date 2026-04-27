@@ -28,6 +28,7 @@ import com.sindhi.urdu.english.keybad.sindhikeyboard.interfaces.generalstatusite
 import com.sindhi.urdu.english.keybad.sindhikeyboard.interfaces.GeneralAdapter
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ui.fragments.DailyStatus.Retrofitcalls.QuoteX
 import com.sindhi.urdu.english.keybad.sindhikeyboard.ui.fragments.DailyStatus.Retrofitcalls.models.dailystatusResponse
+import com.sindhi.urdu.english.keybad.sindhikeyboard.utils.FirebaseLog
 
 class Shayarishow_fragment : Fragment(), generalstatusitemclicklistner {
     private var _binding: FragmentShayarishowFragmentBinding? = null
@@ -47,7 +48,7 @@ class Shayarishow_fragment : Fragment(), generalstatusitemclicklistner {
         val root: View = binding.root
 
         bundle.putString("ShayariShowFragment","ShayariShowFragment")
-        ApplicationClass.firebaseAnalyticsEventsLog.logEvent("event_shayari_show", bundle)
+        FirebaseLog.getAnalytics(requireContext()).logEvent("event_shayari_show", bundle)
 
         navController = findNavController()
         quotesdata= ArrayList()
